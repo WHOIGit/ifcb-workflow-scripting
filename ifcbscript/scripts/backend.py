@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import os
 import shutil
-
+import re
 
 from ifcb import DataDirectory
 
@@ -102,7 +102,11 @@ class FilesetBin(RawBin):
     @property
     def basepath(self):
         return self.fileset_bin.fileset.basepath
-        
+
+
+def normalize_tag_name(tag_name):
+    normalized = re.sub(r'[^_a-zA-Z0-9]','_',tag_name.lower().strip())
+    return normalized
 
 class BinQuerySet(object):
     def __init__(self, qs):
@@ -112,7 +116,33 @@ class BinQuerySet(object):
     def with_data(self, store: BinStore):
         self.store = store
         return self
+    
+    def filter(self, instrument=None, start_time=None, end_time=None, tag=None):
+        # TODO will eventually have a lot more parameters
+        qs = self.qs
         
+        if instrument is not None:
+            qs = qs.filter(instrument=instrument)
+        
+        if start_time is not None:
+            qs = qs.filter(sample_time__gte=start_time)
+            
+        if end_time is not None:
+            qs = qs.filter(sample_time__lte=end_time)
+        
+        if tag is not None:
+            normalized_tag_name = normalize_tag_name(tag)
+            qs = qs.filter(tags__name=normalized_tag_name)
+
+        self.qs = qs 
+        
+        return self
+    
+    def export_list(self, output_path):
+        with open(output_path,'w') as fout:
+            for b in self.qs:
+                print(b.pid, file=fout)
+
     def _copy(self, destination: WritableBinStore, skip_missing=True, skip_existing=True):
         for b in self.qs:
             try:
@@ -125,4 +155,20 @@ class BinQuerySet(object):
     def copy(self, path, skip_missing=True, skip_existing=True):
         output_directory = OutputDirectory(path)
         self._copy(output_directory, skip_missing=skip_missing, skip_existing=skip_existing)
+        return self
+    
+    def tag(self, tag_name):
+        tag_name = normalize_tag_name(tag_name)
+        
+        for b in self.qs:
+            b.add_tag(tag_name)
+            
+        return self
+            
+    def remove_tag(self, tag_name):
+        tag_name = normalize_tag_name(tag_name)
+        
+        for b in self.qs:
+            b.remove_tag(tag_name)
+            
         return self

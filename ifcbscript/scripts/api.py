@@ -8,6 +8,8 @@ def data_directory(path: str):
 
 
 def import_bins(store: IterableBinStore, update=True, skip_existing=True):
+    bin_pids = []
+    
     for b in store:
         pid = b.pid
         metadata = {
@@ -17,25 +19,21 @@ def import_bins(store: IterableBinStore, update=True, skip_existing=True):
         }
         if update:
             Bin.objects.update_or_create(pid=pid, defaults=metadata)
+            bin_pids.append(pid)
         else: # new only
             try:
                 Bin.objects.create(pid=pid, **metadata)
-            except:
+                bin_pids.append(pid)
+            except: # FIXME catch relevant exception
                 raise # FIXME for object already exists, do not raise if skip_existing is True
             
+    qs = Bin.objects.filter(pid__in=bin_pids)
+    
+    return BinQuerySet(qs).with_data(store)
             
-def select_bins(instrument=None, start_time=None, end_time=None):
-    # TODO will eventually have a lot more parameters
-    qs = Bin.objects
+         
+def select_bins(**kw):
+    qs = BinQuerySet(Bin.objects)
     
-    if instrument is not None:
-        qs = qs.filter(instrument=instrument)
-    
-    if start_time is not None:
-        qs = qs.filter(sample_time__gte=start_time)
-        
-    if end_time is not None:
-        qs = qs.filter(sample_time__lte=end_time)
-
-    return BinQuerySet(qs)
+    return qs.filter(**kw)
 
