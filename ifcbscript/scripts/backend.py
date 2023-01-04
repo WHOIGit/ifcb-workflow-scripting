@@ -172,3 +172,6 @@ class BinQuerySet(object):
             b.remove_tag(tag_name)
             
         return self
+    
+    def count(self):
+        return self.qs.count()

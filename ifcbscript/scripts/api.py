@@ -33,7 +33,7 @@ def import_bins(store: IterableBinStore, update=True, skip_existing=True):
             
          
 def select_bins(**kw):
-    qs = BinQuerySet(Bin.objects)
+    qs = BinQuerySet(Bin.objects.all())
     
     return qs.filter(**kw)
 

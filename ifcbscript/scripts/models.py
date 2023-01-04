@@ -40,5 +40,8 @@ class Bin(models.Model):
         self.tags.add(tag)
         
     def remove_tag(self, tag_name):
-        tag = Tag.objects.get(name=tag_name)
+        try:
+            tag = Tag.objects.get(name=tag_name)
+        except Tag.DoesNotExist:
+            return
         self.tags.remove(tag)
