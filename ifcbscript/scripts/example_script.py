@@ -10,7 +10,7 @@ django.setup()
 
 # script proper
 
-from scripts.api import *
+from scripts.api import data_directory, import_bins, select_bins
 
 SOURCE_DIR = r'C:/Data/ifcb_data/api_testing'
 DEST_DIR = os.path.join(SOURCE_DIR, 'destination')
