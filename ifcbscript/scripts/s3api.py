@@ -38,29 +38,34 @@ class s3API:
             raise e
         return keys
     
-    def get_s3_object(self, host_bucket, s3_key, destination_file):
-        # destination_file => os path to file + file_name
+    def download_file(self, host_bucket, s3_key, local_dir):
         try:
-            self.client.download_file(host_bucket, s3_key, destination_file)
-            print("Downloaded File as: ", destination_file)
+            file_name = s3_key.split('/')[-1]
+            self.client.download_file(host_bucket, s3_key, local_dir + "/" + file_name)
+            print("Downloaded File as: ", local_dir + "/" + file_name)
         except Exception as e:
             print("Download Error: ", str(e))
             raise e
     
-    def download_folder(self, host_bucket, s3_prefix, local_dest):
-        keys = self.list_s3_objects(self.client, host_bucket, s3_prefix)
-        
-        for key in keys:
-            dest = key if local_dest is None \
-                else os.path.join(local_dest, os.path.relpath(key, s3_prefix))
-            if not os.path.exists(os.path.dirname(dest)):
-                os.makedirs(os.path.dirname(dest))
-            if key[-1] == '/':
-                continue
+    def download_directory(self, host_bucket, s3_prefix, local_dest):
+        try:
+            keys = self.list_s3_objects(self.client, host_bucket, s3_prefix)
             
-            self.client.download_file(host_bucket, key, dest)
+            for key in keys:
+                dest = key if local_dest is None \
+                    else os.path.join(local_dest, os.path.relpath(key, s3_prefix))
+                if not os.path.exists(os.path.dirname(dest)):
+                    os.makedirs(os.path.dirname(dest))
+                if key[-1] == '/':
+                    continue
+                
+                self.client.download_file(host_bucket, key, dest)
+        except Exception as e:
+            print("Download Directory Error: ", str(e))
+            raise e
         
 
 # USAGE OF THE S3 API
 # s3_obj = s3API('/Users/shravani.nagala/dev/IFCB/shravaninagala.s3cfg')
 # print(s3_obj.list_s3_objects("appdev1", '789'))
+# s3_obj.download_file("appdev1", '789/out.pdf', '/Users/shravani.nagala/dev/IFCB/test_scripts')
